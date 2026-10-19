@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>ProofHire API — App Map</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      line-height: 1.55;
+      --surface: Canvas;
+      --text: CanvasText;
+      --border: color-mix(in srgb, CanvasText 22%, Canvas);
+      --accent: #5a46d6;
+      --soft: color-mix(in srgb, var(--accent) 10%, Canvas);
+    }
+    body { margin: 0 auto; max-width: 920px; padding: 2rem 1.25rem 4rem; color: var(--text); background: var(--surface); }
+    h1, h2 { line-height: 1.2; }
+    h1 { margin-bottom: .35rem; }
+    .muted { opacity: .78; }
+    section { margin-top: 2rem; }
+    .diagram { overflow-x: auto; border: 1px solid var(--border); border-radius: .8rem; padding: 1rem; background: var(--soft); }
+    svg { display: block; min-width: 680px; width: 100%; height: auto; }
+    svg text { fill: CanvasText; font: 14px "Segoe UI", system-ui, sans-serif; }
+    svg .node { fill: Canvas; stroke: var(--border); stroke-width: 1.5; }
+    svg .edge { stroke: var(--accent); stroke-width: 2; fill: none; }
+    code, pre { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+    code { overflow-wrap: anywhere; }
+    pre { overflow-x: auto; border: 1px solid var(--border); border-radius: .5rem; padding: .9rem; }
+    li + li { margin-top: .55rem; }
+    a { color: LinkText; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ProofHire API</h1>
+    <p class="muted">A Python FastAPI backend that compares one resume claim with bounded GitHub code evidence and returns review questions. The frontend is separate.</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="flow-title">
+      <h2 id="flow-title">One audit, from request to result</h2>
+      <div class="diagram">
+        <svg viewBox="0 0 820 250" role="img" aria-labelledby="diagram-title diagram-description">
+          <title id="diagram-title">ProofHire audit request flow</title>
+          <desc id="diagram-description">A frontend posts a repository URL and claim to the audit route. The backend reads a sample snapshot or public GitHub files, analyzes numbered evidence with a heuristic or optional LLM, and returns a JSON report with citations and viva questions.</desc>
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="#5a46d6"></path>
+            </marker>
+          </defs>
+          <rect class="node" x="18" y="92" width="150" height="66" rx="10"></rect>
+          <text x="93" y="119" text-anchor="middle">Frontend</text>
+          <text x="93" y="141" text-anchor="middle">repo URL + claim</text>
+          <rect class="node" x="226" y="92" width="170" height="66" rx="10"></rect>
+          <text x="311" y="119" text-anchor="middle">POST /api/audit</text>
+          <text x="311" y="141" text-anchor="middle">validate + select files</text>
+          <rect class="node" x="457" y="24" width="155" height="66" rx="10"></rect>
+          <text x="534" y="51" text-anchor="middle">Sample snapshot</text>
+          <text x="534" y="73" text-anchor="middle">or GitHub + cache</text>
+          <rect class="node" x="457" y="158" width="155" height="66" rx="10"></rect>
+          <text x="534" y="185" text-anchor="middle">Heuristic</text>
+          <text x="534" y="207" text-anchor="middle">or optional LLM</text>
+          <rect class="node" x="663" y="92" width="140" height="66" rx="10"></rect>
+          <text x="733" y="119" text-anchor="middle">JSON result</text>
+          <text x="733" y="141" text-anchor="middle">evidence + questions</text>
+          <path class="edge" marker-end="url(#arrow)" d="M168 125 H220"></path>
+          <path class="edge" marker-end="url(#arrow)" d="M396 108 C418 84 428 67 451 60"></path>
+          <path class="edge" marker-end="url(#arrow)" d="M396 142 C418 165 428 184 451 190"></path>
+          <path class="edge" marker-end="url(#arrow)" d="M612 57 C640 65 649 86 663 106"></path>
+          <path class="edge" marker-end="url(#arrow)" d="M612 191 C640 182 649 162 663 145"></path>
+        </svg>
+      </div>
+      <p>The deterministic path works without keys. Optional Gemini/OpenAI analysis is accepted only when its citations match fetched files and line ranges; otherwise the backend falls back to deterministic results.</p>
+    </section>
+
+    <section aria-labelledby="route-title">
+      <h2 id="route-title">Reference route through the code</h2>
+      <p>This is a reference route; it was prepared from the source and was not a live editor tour.</p>
+      <ol>
+        <li><a href="../main.py"><code>main.py</code> — <code>audit</code></a>: the REST entry point checks input, resolves optional keys, and chooses a bundled sample or fetched repository.</li>
+        <li><a href="../main.py"><code>main.py</code> — <code>repository_key</code>, <code>fetch_repository</code></a>: validates GitHub URLs, retrieves a bounded tree and files, numbers evidence, and uses the TTL cache.</li>
+        <li><a href="../main.py"><code>main.py</code> — <code>build_heuristic_audit</code>, <code>build_llm_audit</code>, <code>evaluate_viva</code></a>: creates structured evidence/questions, validates model citations, and evaluates an answer.</li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="change-title">
+      <h2 id="change-title">To change this, start here</h2>
+      <ul>
+        <li>Change or add an offline demo: edit <code>SAMPLE_DATA</code> near the top of <code>main.py</code>.</li>
+        <li>Teach the fallback analyzer another technology: add patterns to <code>FEATURES</code> and a small example to <code>FEATURE_FIX_SNIPPETS</code>.</li>
+        <li>Adjust file selection, byte/line caps, or cache lifetime: start with <code>MAX_SOURCE_FILES</code>, <code>MAX_FILE_BYTES</code>, <code>MAX_FILE_LINES</code>, <code>REPO_CACHE_TTL_SECONDS</code>, and <code>fetch_repository</code>.</li>
+        <li>Connect a frontend: use the JSON contracts shown in FastAPI's <code>/docs</code>; the backend has no browser UI.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="practice-title">
+      <h2 id="practice-title">A practice to reuse</h2>
+      <p>Make important claims testable: this backend treats a source citation as valid only when the path and 1-based line range exist in the fetched file map (<code>citation_is_valid</code>). The approved acceptance criteria in <code>prd.md &gt; Audit Request</code> became checks for real line ranges and sample responses. On another project, turn a statement such as “the result includes evidence” into a concrete check of where that evidence came from.</p>
+    </section>
+
+    <section aria-labelledby="run-title">
+      <h2 id="run-title">Run it again</h2>
+      <pre><code>python -m pip install -r requirements.txt
+python -m uvicorn main:app --reload</code></pre>
+      <p>Open <code>http://127.0.0.1:8000/docs</code>. No key is required for the bundled sample audits. Copy <code>.env.example</code> to a local <code>.env</code> only if testing optional provider credentials; never commit secrets.</p>
+      <p class="muted">Map source snapshot: backend commit <code>c7ecdf7</code>. This guide is a static snapshot and can drift if the implementation changes. Reopen it at <code>devpost/app-map.html</code>.</p>
+    </section>
+  </main>
+</body>
+</html>

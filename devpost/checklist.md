@@ -42,22 +42,22 @@ Build mode: fast
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 1, before live GitHub/provider work
-- [ ] Final kick-the-tires exploration and feedback completed
+- [x] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
 
-- [ ] Final review complete — feedback resolved and learner confirms ready to ship
+- [x] Final review complete — feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete — evidence-based recap connected to the learner's goal and verified endpoint behavior
+- [x] Optional edit and transfer reflection addressed — not requested; learner asked to proceed without extra questions
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: [what actually happened; real document/test/code references; unfinished work if interrupted]
-Route and stops: [actual paths and symbols; guided stops completed, or reference-only route]
-Edit outcome: [tried/kept/reverted/declined/not applicable; verification if changed]
-Reflection: [offered/answered/declined/already covered — personal answer belongs only in the ignored profile]
-Activity mode: [live app and editor, explicit static fallback, focused alternative, prior practice, or recap]
+Activity and evidence: Final hands-on review at `/docs`: learner tested `GET /api/samples` and `POST /api/audit` and reported clean evidence and viva questions, then confirmed everything looked good. Independent HTTP checks also verified `POST /api/evaluate-viva` returns 200 on ports 8000 and 8001; all endpoint smoke checks passed.
+Route and stops: Reference route only (not toured live): `main.py` `audit` → `repository_key`/`fetch_repository` → `build_heuristic_audit` or `build_llm_audit`; viva answers enter `evaluate_viva`.
+Edit outcome: Not applicable; no final-review changes were requested.
+Reflection: Not requested; learner asked to proceed without additional questions.
+Activity mode: Evidence-based recap after learner's live API review; static code route provided in the app map.
 
 ## Revisions
