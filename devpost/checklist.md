@@ -29,7 +29,7 @@ Build mode: fast
   Learner check: Submit a public repository URL and one claim through `/docs`; compare one returned citation with the actual file path and line, then repeat the request and inspect the cache/engine metadata.
   Commit: `Add resilient GitHub and LLM audit engines`
 
-- [ ] **3. Viva evaluation and complete API behavior are verified**
+- [x] **3. Viva evaluation and complete API behavior are verified**
   Becomes usable: The separate frontend can evaluate candidate answers with or without an LLM key, and all requested endpoints, error paths, sample flows, and setup instructions have been checked together.
   Why now: Viva evaluation depends on stable question output from the audit; final integration checks verify the full backend contract after its dependencies are in place.
   PRD ref: `prd.md > Viva Answer Evaluation`, `prd.md > API Behavior and Acceptance Criteria`, `prd.md > States and Boundaries`
