@@ -9,7 +9,7 @@ Build mode: fast
 
 ## Slices
 
-- [ ] **1. Sample-backed audits return usable evidence**
+- [x] **1. Sample-backed audits return usable evidence**
   Becomes usable: The FastAPI service starts and a frontend can check health, load offline demo samples, and submit a sample audit that returns line-numbered evidence, a score, and three viva questions without credentials.
   Why now: Bootstrapping is part of the first working behavior, and the unique claim-to-evidence kernel is proven immediately with deterministic sample data before network or model complexity is added.
   PRD ref: `prd.md > The Core Journey`, `prd.md > Health and Samples`, `prd.md > Audit Request`
@@ -19,7 +19,7 @@ Build mode: fast
   Learner check: Start the backend, open `/docs`, load one sample from `/api/samples`, submit its payload to `/api/audit`, and check that a cited file and line appear in the response.
   Commit: `Build sample-backed ProofHire audit API`
 
-- [ ] **2. Live GitHub audits and resilient optional LLM analysis work**
+- [x] **2. Live GitHub audits and resilient optional LLM analysis work**
   Becomes usable: A frontend can audit a real public GitHub repository with bounded file retrieval, caching, exact citations, and optional Gemini/OpenAI analysis that falls back to deterministic results when keys or providers are unavailable.
   Why now: Sample-backed behavior already proves the core output contract; this slice adds the external data and provider risks without making the demo dependent on them.
   PRD ref: `prd.md > Audit Request`, `prd.md > States and Boundaries`
@@ -41,7 +41,7 @@ Build mode: fast
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after slice 1, before live GitHub/provider work
+- [x] Early usable behavior explored — after slice 1, before live GitHub/provider work
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
