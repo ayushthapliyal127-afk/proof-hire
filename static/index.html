@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#090b10">
+  <title>ProofHire AI — Repository Claim Audit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#090b10",
+            panel: "#11141b",
+            line: "#252a35",
+            muted: "#9299aa",
+            brand: "#8a78ff",
+            mint: "#48e0bd"
+          },
+          boxShadow: {
+            glow: "0 0 34px rgba(138,120,255,.22)",
+            card: "0 18px 50px rgba(0,0,0,.24)"
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 82% 0%, rgba(95,75,197,.16), transparent 34rem),
+        radial-gradient(ellipse at 4% 38%, rgba(30,159,137,.08), transparent 30rem),
+        #090b10;
+    }
+    .glass { background: rgba(16,19,27,.76); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+    .grid-glow {
+      background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
+    }
+    .score-ring { background: conic-gradient(var(--score-color) calc(var(--score) * 1%), #252a35 0); }
+    .score-ring::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: #11141b; }
+    .scan-line { animation: scan 2.4s ease-in-out infinite; }
+    @keyframes scan { 0% { transform: translateX(-120%); } 100% { transform: translateX(360%); } }
+    .pulse-dot { animation: pulse 1.7s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .4; transform: scale(.8); } }
+    .skeleton { background: linear-gradient(90deg, #1a1e28 25%, #252a35 50%, #1a1e28 75%); background-size: 200% 100%; animation: shimmer 1.6s infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    :focus-visible { outline: 2px solid #a89cff; outline-offset: 3px; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+  </style>
+</head>
+<body class="text-slate-100 antialiased selection:bg-brand/30 selection:text-white">
+  <div aria-hidden="true" class="grid-glow pointer-events-none fixed inset-0 -z-10"></div>
+  <header class="sticky top-0 z-30 border-b border-white/[.07] glass">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
+      <a href="/" class="flex min-w-0 items-center gap-3 rounded-xl" aria-label="ProofHire AI home">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-brand/30 bg-brand/15 text-brand shadow-glow">
+          <i data-lucide="shield-check" class="h-5 w-5"></i>
+        </span>
+        <span class="min-w-0">
+          <span class="block truncate text-sm font-semibold tracking-wide text-white">ProofHire <span class="text-brand">AI</span></span>
+          <span class="hidden text-[11px] tracking-wide text-muted sm:block">EVIDENCE-DRIVEN TECHNICAL REVIEW</span>
+        </span>
+      </a>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div id="backend-status" role="status" aria-live="polite" class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.035] px-3 py-2 text-xs text-muted">
+          <span id="status-dot" class="pulse-dot h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+          <span id="status-label">Connecting</span>
+        </div>
+        <a href="/docs" target="_blank" rel="noreferrer" class="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-muted transition hover:bg-white/[.06] hover:text-white sm:inline-flex">
+          <i data-lucide="braces" class="h-4 w-4"></i> API docs
+        </a>
+        <button id="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel" class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[.04] px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/[.08]">
+          <i data-lucide="key-round" class="h-4 w-4 text-brand"></i>
+          <span class="hidden sm:inline">API keys</span>
+          <i data-lucide="chevron-down" class="h-3.5 w-3.5 text-muted"></i>
+        </button>
+      </div>
+    </div>
+    <div id="settings-panel" hidden class="border-t border-white/[.07]">
+      <div class="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+        <label class="block text-xs font-medium text-slate-300">GitHub token <span class="text-muted">(optional)</span>
+          <input id="github-token" type="password" autocomplete="off" placeholder="ghp_…" class="mt-2 w-full rounded-lg border border-white/10 bg-ink/80 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-brand/60 focus:outline-none">
+        </label>
+        <label class="block text-xs font-medium text-slate-300">Gemini API key <span class="text-muted">(optional)</span>
+          <input id="gemini-key" type="password" autocomplete="off" placeholder="AIza…" class="mt-2 w-full rounded-lg border border-white/10 bg-ink/80 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-brand/60 focus:outline-none">
+        </label>
+        <label class="block text-xs font-medium text-slate-300">OpenAI API key <span class="text-muted">(optional)</span>
+          <input id="openai-key" type="password" autocomplete="off" placeholder="sk-…" class="mt-2 w-full rounded-lg border border-white/10 bg-ink/80 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-brand/60 focus:outline-none">
+        </label>
+        <div class="flex items-end gap-2">
+          <label class="min-w-0 flex-1 text-xs font-medium text-slate-300">LLM provider
+            <select id="llm-provider" class="mt-2 w-full rounded-lg border border-white/10 bg-ink/80 px-3 py-2.5 text-sm text-white focus:border-brand/60 focus:outline-none">
+              <option value="auto">Auto</option>
+              <option value="gemini">Gemini</option>
+              <option value="openai">OpenAI</option>
+            </select>
+          </label>
+          <button id="clear-keys" type="button" class="mb-px rounded-lg border border-white/10 px-3 py-2.5 text-xs text-muted transition hover:border-rose-400/30 hover:text-rose-200">Clear</button>
+        </div>
+        <p class="text-[11px] leading-relaxed text-muted sm:col-span-2 lg:col-span-4">Keys stay in this page's memory and are sent only to this ProofHire backend for the request. They are not saved in browser storage. Use a trusted local backend.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+    <section class="mx-auto max-w-4xl text-center">
+      <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/[.08] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.16em] text-brand">
+        <span class="h-1.5 w-1.5 rounded-full bg-brand"></span> Code-backed claim verification
+      </div>
+      <h1 class="text-balance text-4xl font-semibold tracking-[-.045em] text-white sm:text-5xl lg:text-6xl">Proof, not promises.</h1>
+      <p class="mx-auto mt-5 max-w-2xl text-pretty text-sm leading-7 text-slate-400 sm:text-base">Cross-examine a technical resume claim against real repository evidence. Find the code, inspect the lines, and ask better technical questions.</p>
+    </section>
+
+    <section aria-labelledby="audit-form-title" class="mx-auto mt-10 max-w-5xl">
+      <div class="overflow-hidden rounded-2xl border border-white/[.09] bg-panel/90 shadow-card">
+        <div class="flex items-center justify-between border-b border-white/[.07] px-5 py-4 sm:px-7">
+          <div class="flex items-center gap-3">
+            <span class="grid h-9 w-9 place-items-center rounded-lg bg-white/[.05] text-slate-300"><i data-lucide="scan-search" class="h-[18px] w-[18px]"></i></span>
+            <div>
+              <h2 id="audit-form-title" class="text-sm font-semibold text-white">Start a repository audit</h2>
+              <p class="mt-0.5 text-xs text-muted">One repository. One claim. Verifiable evidence.</p>
+            </div>
+          </div>
+          <span class="hidden items-center gap-1.5 text-[11px] text-muted sm:inline-flex"><i data-lucide="lock-keyhole" class="h-3.5 w-3.5"></i> No account required</span>
+        </div>
+        <form id="audit-form" class="space-y-5 p-5 sm:p-7">
+          <div>
+            <label for="repo-url" class="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-300"><i data-lucide="github" class="h-4 w-4 text-muted"></i> GitHub Repository URL</label>
+            <input id="repo-url" name="repo_url" type="url" required maxlength="2048" autocomplete="url" placeholder="https://github.com/fastapi/fastapi" class="w-full rounded-xl border border-white/10 bg-ink/70 px-4 py-3.5 text-sm text-white placeholder:text-slate-600 transition focus:border-brand/60 focus:outline-none focus:ring-4 focus:ring-brand/10">
+          </div>
+          <div>
+            <label for="claim" class="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-300"><span class="flex items-center gap-2"><i data-lucide="file-check-2" class="h-4 w-4 text-muted"></i> Resume Claim / Bullet Point</span><span id="claim-count" class="font-normal text-muted">0 / 2000</span></label>
+            <textarea id="claim" name="claim" required maxlength="2000" rows="3" placeholder="Built high-performance async REST APIs with JWT auth and Redis caching" class="w-full resize-y rounded-xl border border-white/10 bg-ink/70 px-4 py-3.5 text-sm leading-6 text-white placeholder:text-slate-600 transition focus:border-brand/60 focus:outline-none focus:ring-4 focus:ring-brand/10"></textarea>
+          </div>
+          <div class="flex flex-col gap-3 border-t border-white/[.06] pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-col gap-2 sm:flex-row">
+              <label for="sample-select" class="sr-only">Choose a sample repository</label>
+              <select id="sample-select" class="min-w-0 rounded-lg border border-white/10 bg-white/[.035] px-3 py-2.5 text-xs text-slate-300 focus:border-brand/50 focus:outline-none sm:max-w-[280px]">
+                <option value="">Loading sample cases…</option>
+              </select>
+              <button id="load-sample" type="button" disabled class="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-300/20 bg-amber-300/[.07] px-4 py-2.5 text-xs font-semibold text-amber-100 transition hover:border-amber-200/40 hover:bg-amber-300/[.12]">
+                <i data-lucide="zap" class="h-4 w-4"></i> Load Sample Repo
+              </button>
+            </div>
+            <button id="audit-button" type="submit" class="group inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-brand to-indigo-500 px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:brightness-110 disabled:cursor-wait">
+              <i data-lucide="scan-line" class="h-[18px] w-[18px]"></i>
+              <span>Audit Repository &amp; Verify Claims</span>
+              <i data-lucide="arrow-up-right" class="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <div id="alert-banner" role="alert" aria-live="assertive" hidden class="mx-auto mt-5 max-w-5xl rounded-xl border border-rose-400/20 bg-rose-400/[.07] px-4 py-3 text-sm text-rose-100"></div>
+    <div id="notice-banner" role="status" aria-live="polite" hidden class="mx-auto mt-5 max-w-5xl rounded-xl border border-amber-300/20 bg-amber-300/[.06] px-4 py-3 text-sm text-amber-100"></div>
+
+    <section id="loading-panel" aria-live="polite" hidden class="mx-auto mt-8 max-w-5xl overflow-hidden rounded-2xl border border-white/[.09] bg-panel/90 p-6 shadow-card sm:p-8">
+      <div class="flex items-center gap-3">
+        <span class="relative grid h-10 w-10 place-items-center rounded-xl bg-brand/15 text-brand"><i data-lucide="scan-search" class="h-5 w-5"></i><span class="absolute inset-0 animate-ping rounded-xl border border-brand/30"></span></span>
+        <div><h2 class="text-sm font-semibold text-white">Cross-examining the repository</h2><p id="loading-stage" class="mt-1 text-xs text-muted">Analyzing file tree…</p></div>
+      </div>
+      <div class="mt-6 h-1 overflow-hidden rounded-full bg-white/[.06]"><div class="scan-line h-full w-1/3 rounded-full bg-gradient-to-r from-transparent via-brand to-mint"></div></div>
+      <div class="mt-6 grid gap-3 sm:grid-cols-3" aria-hidden="true">
+        <div class="skeleton h-20 rounded-xl"></div><div class="skeleton h-20 rounded-xl"></div><div class="skeleton h-20 rounded-xl"></div>
+      </div>
+      <ul class="mt-5 space-y-2 text-xs text-muted">
+        <li id="stage-tree" class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand"></span> Analyzing file tree…</li>
+        <li id="stage-imports" class="flex items-center gap-2 opacity-50"><span class="h-1.5 w-1.5 rounded-full bg-slate-600"></span> Checking AST imports &amp; implementation signals…</li>
+        <li id="stage-claim" class="flex items-center gap-2 opacity-50"><span class="h-1.5 w-1.5 rounded-full bg-slate-600"></span> Cross-examining resume claim…</li>
+      </ul>
+    </section>
+
+    <section id="results" hidden class="mx-auto mt-10 max-w-6xl space-y-6">
+      <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+        <div><div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.18em] text-mint"><span class="h-1.5 w-1.5 rounded-full bg-mint"></span> Audit complete</div><h2 class="mt-2 text-2xl font-semibold tracking-tight text-white">Evidence report</h2></div>
+        <div id="repo-meta" class="flex flex-wrap gap-2 text-xs"></div>
+      </div>
+
+      <div class="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(260px,.8fr)]">
+        <article class="relative overflow-hidden rounded-2xl border border-white/[.09] bg-panel p-6 shadow-card sm:p-7">
+          <div class="absolute right-0 top-0 h-48 w-48 rounded-full bg-brand/[.06] blur-3xl"></div>
+          <div class="relative flex flex-col gap-6 sm:flex-row sm:items-center">
+            <div class="flex min-w-[150px] items-center gap-5 sm:block">
+              <div id="score-ring" class="score-ring relative grid h-28 w-28 shrink-0 place-items-center rounded-full" style="--score:0;--score-color:#8a78ff">
+                <div class="relative z-10 text-center"><span id="score-value" class="block text-3xl font-semibold tracking-tight text-white">—</span><span class="text-[9px] font-semibold uppercase tracking-[.16em] text-muted">score</span></div>
+              </div>
+              <div class="sm:mt-4"><div class="text-[10px] font-semibold uppercase tracking-[.16em] text-muted">Credibility</div><div id="verdict-badge" class="mt-2 inline-flex max-w-full rounded-full border px-3 py-1.5 text-xs font-semibold">Awaiting result</div></div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.14em] text-slate-400"><i data-lucide="sparkles" class="h-4 w-4 text-brand"></i> Audit summary</div>
+              <p id="summary" class="text-sm leading-7 text-slate-300"></p>
+              <div id="scan-limits" class="mt-4 space-y-2"></div>
+              <div id="warnings" class="mt-3 space-y-2"></div>
+            </div>
+          </div>
+        </article>
+        <article class="rounded-2xl border border-white/[.09] bg-panel p-5 shadow-card sm:p-6">
+          <div class="flex items-center justify-between"><div><h3 class="text-sm font-semibold text-white">Scan overview</h3><p class="mt-1 text-xs text-muted">What the engine inspected</p></div><span class="grid h-9 w-9 place-items-center rounded-lg bg-mint/[.08] text-mint"><i data-lucide="binary" class="h-[18px] w-[18px]"></i></span></div>
+          <div id="scan-stats" class="mt-5 grid grid-cols-2 gap-3"></div>
+          <div class="mt-4 border-t border-white/[.07] pt-4"><div class="mb-2 text-[10px] font-semibold uppercase tracking-[.14em] text-muted">Files scanned</div><div id="files-scanned" class="flex flex-wrap gap-1.5"></div></div>
+        </article>
+      </div>
+
+      <article class="rounded-2xl border border-white/[.09] bg-panel p-5 shadow-card sm:p-6">
+        <div class="mb-5 flex items-center justify-between gap-3"><div><h3 class="text-sm font-semibold text-white">Claim vs. code</h3><p class="mt-1 text-xs text-muted">Each status reflects evidence in the files inspected—not the entire repository.</p></div><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand/[.09] text-brand"><i data-lucide="git-compare-arrows" class="h-[18px] w-[18px]"></i></span></div>
+        <div id="claim-breakdown" class="grid gap-3 md:grid-cols-2"></div>
+      </article>
+
+      <article class="rounded-2xl border border-white/[.09] bg-panel p-5 shadow-card sm:p-6">
+        <div class="mb-5 flex items-center justify-between gap-3"><div><h3 class="text-sm font-semibold text-white">Code evidence &amp; findings</h3><p class="mt-1 text-xs text-muted">Source excerpts are tied to exact repository paths and line numbers.</p></div><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-mint/[.08] text-mint"><i data-lucide="file-code-2" class="h-[18px] w-[18px]"></i></span></div>
+        <div id="code-evidence" class="mb-4 grid gap-3 lg:grid-cols-2"></div>
+        <div id="findings" class="grid gap-3 lg:grid-cols-2"></div>
+      </article>
+
+      <section aria-labelledby="viva-title" class="space-y-4">
+        <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><div class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.18em] text-brand"><i data-lucide="messages-square" class="h-4 w-4"></i> Interactive defense</div><h3 id="viva-title" class="mt-1 text-xl font-semibold text-white">Technical viva</h3><p class="mt-1 text-xs text-muted">Answer from your own understanding; grading is feedback, not a hiring decision.</p></div><span class="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[11px] text-muted"><i data-lucide="list-checks" class="h-3.5 w-3.5"></i> 3 evidence-grounded questions</span></div>
+        <div id="viva-questions" class="grid gap-4"></div>
+      </section>
+    </section>
+
+    <footer class="mx-auto mt-16 flex max-w-5xl flex-col items-center justify-between gap-3 border-t border-white/[.07] pt-6 text-center text-[11px] text-muted sm:flex-row sm:text-left">
+      <span class="flex items-center gap-2"><i data-lucide="shield" class="h-3.5 w-3.5 text-brand"></i> A human-review aid. Code evidence cannot prove authorship or hiring fit.</span>
+      <span>ProofHire API · <a href="/docs" class="text-slate-400 underline decoration-white/20 underline-offset-4 hover:text-white">Open API docs</a></span>
+    </footer>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+      const byId = (id) => document.getElementById(id);
+      const form = byId("audit-form");
+      const samplesSelect = byId("sample-select");
+      let samples = [];
+      let currentAudit = null;
+      let loadingTimer = null;
+      let loadingStageIndex = 0;
+      const loadingStages = [
+        "Analyzing file tree…",
+        "Checking AST imports & implementation signals…",
+        "Cross-examining resume claim…"
+      ];
+
+      function escapeHTML(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[character]);
+      }
+
+      function icon(name, className = "h-4 w-4") {
+        const icons = {
+          check: '<svg class="' + className + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg>',
+          alert: '<svg class="' + className + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>',
+          file: '<svg class="' + className + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8m-8 4h8"/></svg>',
+          arrow: '<svg class="' + className + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M7 7h10v10"/></svg>'
+        };
+        return icons[name] || "";
+      }
+
+      function setBanner(kind, message) {
+        const target = byId(kind === "error" ? "alert-banner" : "notice-banner");
+        const other = byId(kind === "error" ? "notice-banner" : "alert-banner");
+        other.hidden = true;
+        target.textContent = message;
+        target.hidden = false;
+        target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      function clearBanners() {
+        byId("alert-banner").hidden = true;
+        byId("notice-banner").hidden = true;
+      }
+
+      async function readResponse(response) {
+        const contentType = response.headers.get("content-type") || "";
+        const data = contentType.includes("application/json") ? await response.json() : await response.text();
+        if (!response.ok) {
+          const detail = data && typeof data === "object" ? data.detail : null;
+          const message = detail && typeof detail === "object" ? detail.message : detail;
+          throw new Error(typeof message === "string" ? message : (typeof data === "string" && data ? data : `Request failed (${response.status}).`));
+        }
+        return data;
+      }
+
+      async function refreshHealth() {
+        const dot = byId("status-dot");
+        const label = byId("status-label");
+        try {
+          const response = await fetch("/api/health", { headers: { "Accept": "application/json" } });
+          if (!response.ok) throw new Error("Backend unavailable");
+          const health = await response.json();
+          if (health.status !== "ok") throw new Error("Unexpected health response");
+          dot.className = "h-1.5 w-1.5 rounded-full bg-mint";
+          label.textContent = "Backend online";
+          byId("backend-status").className = "inline-flex items-center gap-2 rounded-full border border-mint/20 bg-mint/[.06] px-3 py-2 text-xs text-mint";
+        } catch (_) {
+          dot.className = "pulse-dot h-1.5 w-1.5 rounded-full bg-rose-400";
+          label.textContent = "Backend offline";
+          byId("backend-status").className = "inline-flex items-center gap-2 rounded-full border border-rose-400/20 bg-rose-400/[.06] px-3 py-2 text-xs text-rose-200";
+        }
+      }
+
+      async function loadSamples() {
+        try {
+          const response = await fetch("/api/samples", { headers: { "Accept": "application/json" } });
+          const data = await readResponse(response);
+          samples = Array.isArray(data.samples) ? data.samples : [];
+          samplesSelect.replaceChildren();
+          const initial = document.createElement("option");
+          initial.value = "";
+          initial.textContent = samples.length ? "Choose a sample scenario…" : "No sample scenarios available";
+          samplesSelect.append(initial);
+          samples.forEach((sample, index) => {
+            const option = document.createElement("option");
+            option.value = String(index);
+            option.textContent = sample.title || `Sample ${index + 1}`;
+            samplesSelect.append(option);
+          });
+          byId("load-sample").disabled = samples.length === 0;
+        } catch (error) {
+          samplesSelect.replaceChildren();
+          const option = document.createElement("option");
+          option.value = "";
+          option.textContent = "Samples unavailable";
+          samplesSelect.append(option);
+          byId("load-sample").disabled = true;
+          setBanner("error", `Could not load sample scenarios: ${error.message}`);
+        }
+      }
+
+      function loadSelectedSample() {
+        const index = Number(samplesSelect.value);
+        if (!Number.isInteger(index) || index < 0 || !samples[index]) {
+          setBanner("error", "Choose a sample scenario first.");
+          return;
+        }
+        const payload = samples[index].payload || {};
+        byId("repo-url").value = payload.repo_url || "";
+        byId("claim").value = payload.claim || "";
+        updateClaimCount();
+        clearBanners();
+        byId("repo-url").focus();
+      }
+
+      function updateClaimCount() {
+        byId("claim-count").textContent = `${byId("claim").value.length} / 2000`;
+      }
+
+      function setLoading(active) {
+        byId("loading-panel").hidden = !active;
+        byId("audit-button").disabled = active;
+        byId("load-sample").disabled = active || samples.length === 0;
+        if (!active) {
+          if (loadingTimer) window.clearInterval(loadingTimer);
+          loadingTimer = null;
+          return;
+        }
+        loadingStageIndex = 0;
+        updateLoadingStage();
+        if (loadingTimer) window.clearInterval(loadingTimer);
+        loadingTimer = window.setInterval(() => {
+          loadingStageIndex = (loadingStageIndex + 1) % loadingStages.length;
+          updateLoadingStage();
+        }, 1600);
+      }
+
+      function updateLoadingStage() {
+        byId("loading-stage").textContent = loadingStages[loadingStageIndex];
+        ["stage-tree", "stage-imports", "stage-claim"].forEach((id, index) => {
+          const item = byId(id);
+          item.classList.toggle("opacity-50", index > loadingStageIndex);
+          item.classList.toggle("text-brand", index === loadingStageIndex);
+        });
+      }
+
+      function credentialPayload() {
+        const body = {
+          repo_url: byId("repo-url").value.trim(),
+          claim: byId("claim").value.trim(),
+          llm_provider: byId("llm-provider").value
+        };
+        const github = byId("github-token").value.trim();
+        const gemini = byId("gemini-key").value.trim();
+        const openai = byId("openai-key").value.trim();
+        if (github) body.github_token = github;
+        if (gemini) body.gemini_api_key = gemini;
+        if (openai) body.openai_api_key = openai;
+        return body;
+      }
+
+      function statusStyle(status) {
+        if (status === "verified") return "border-mint/20 bg-mint/[.07] text-mint";
+        if (status === "partial") return "border-amber-300/20 bg-amber-300/[.07] text-amber-200";
+        return "border-rose-400/20 bg-rose-400/[.07] text-rose-200";
+      }
+
+      function statusLabel(status) {
+        if (status === "verified") return "Verified";
+        if (status === "partial") return "Partial";
+        return "Not found";
+      }
+
+      function scoreColor(score) {
+        if (score >= 80) return { color: "#48e0bd", text: "text-mint", badge: "border-mint/20 bg-mint/[.07] text-mint" };
+        if (score >= 40) return { color: "#f5c451", text: "text-amber-200", badge: "border-amber-300/20 bg-amber-300/[.07] text-amber-100" };
+        return { color: "#fb7185", text: "text-rose-300", badge: "border-rose-400/20 bg-rose-400/[.07] text-rose-200" };
+      }
+
+      function renderReport(report) {
+        currentAudit = report;
+        const score = Math.max(0, Math.min(100, Number(report.credibility_score) || 0));
+        const colors = scoreColor(score);
+        byId("results").hidden = false;
+        byId("score-ring").style.setProperty("--score", String(score));
+        byId("score-ring").style.setProperty("--score-color", colors.color);
+        byId("score-value").textContent = String(score);
+        byId("verdict-badge").className = `mt-2 inline-flex max-w-full rounded-full border px-3 py-1.5 text-xs font-semibold ${colors.badge}`;
+        byId("verdict-badge").textContent = report.verdict || "Audit complete";
+        byId("summary").textContent = report.summary || "Audit completed. Review the evidence below.";
+
+        const metadata = report.repo_metadata || {};
+        byId("repo-meta").innerHTML = [
+          metadata.language && `<span class="rounded-full border border-white/10 bg-white/[.035] px-3 py-1.5 text-slate-300">${escapeHTML(metadata.language)}</span>`,
+          `<span class="rounded-full border border-white/10 bg-white/[.035] px-3 py-1.5 text-slate-300">${escapeHTML(metadata.owner || "")}/${escapeHTML(metadata.repo || "")}</span>`,
+          `<span class="rounded-full border border-white/10 bg-white/[.035] px-3 py-1.5 text-slate-300">${escapeHTML(metadata.stars ?? 0)} stars</span>`,
+          `<span class="rounded-full border border-white/10 bg-white/[.035] px-3 py-1.5 text-slate-300">Engine: ${escapeHTML(metadata.analysis_engine || "heuristic")}</span>`,
+          metadata.cached ? '<span class="rounded-full border border-brand/20 bg-brand/[.07] px-3 py-1.5 text-brand">Cached</span>' : ""
+        ].filter(Boolean).join("");
+
+        const limits = Array.isArray(report.scan_limits) ? report.scan_limits : [];
+        byId("scan-limits").innerHTML = limits.map((limit) =>
+          `<p class="flex gap-2 text-xs leading-5 text-amber-100/80">${icon("alert", "mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300")}<span>${escapeHTML(limit)}</span></p>`
+        ).join("");
+        const warnings = Array.isArray(report.warnings) ? report.warnings : [];
+        byId("warnings").innerHTML = warnings.map((warning) =>
+          `<p class="flex gap-2 text-xs leading-5 text-amber-100/80">${icon("alert", "mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300")}<span>${escapeHTML(warning)}</span></p>`
+        ).join("");
+        const breakdown = Array.isArray(report.claim_breakdown) ? report.claim_breakdown : [];
+        const verified = breakdown.filter((item) => item.status === "verified").length;
+        byId("scan-stats").innerHTML = [
+          ["Claim signals", breakdown.length],
+          ["Verified", verified],
+          ["Findings", Array.isArray(report.findings) ? report.findings.length : 0],
+          ["Viva questions", Array.isArray(report.viva_questions) ? report.viva_questions.length : 0]
+        ].map(([label, value]) => `<div class="rounded-xl border border-white/[.06] bg-white/[.025] p-3"><div class="text-lg font-semibold ${label === "Verified" ? colors.text : "text-white"}">${escapeHTML(value)}</div><div class="mt-1 text-[10px] uppercase tracking-[.12em] text-muted">${escapeHTML(label)}</div></div>`).join("");
+        const files = Array.isArray(metadata.files_scanned) ? metadata.files_scanned : [];
+        byId("files-scanned").innerHTML = files.length
+          ? files.map((file) => `<span class="rounded-md border border-white/[.07] bg-white/[.025] px-2 py-1 font-mono text-[10px] text-slate-300">${escapeHTML(file)}</span>`).join("")
+          : '<span class="text-xs text-muted">No text files were scanned.</span>';
+
+        byId("claim-breakdown").innerHTML = breakdown.length ? breakdown.map((item) => {
+          const hasCitation = item.evidence_file && item.evidence_lines;
+          return `<div class="rounded-xl border border-white/[.07] bg-white/[.025] p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2"><h4 class="text-sm font-semibold text-white">${escapeHTML(item.claimed_feature)}</h4><span class="rounded-full border px-2.5 py-1 text-[10px] font-semibold ${statusStyle(item.status)}">${escapeHTML(statusLabel(item.status))}</span></div>
+            <p class="mt-2 text-xs leading-5 text-slate-400">${escapeHTML(item.explanation)}</p>
+            ${hasCitation ? `<div class="mt-3 flex items-center gap-2 rounded-lg border border-white/[.06] bg-ink/60 px-3 py-2 font-mono text-[11px] text-brand">${icon("file", "h-3.5 w-3.5 shrink-0")}<span class="min-w-0 truncate">${escapeHTML(item.evidence_file)}</span><span class="shrink-0 text-slate-400">L${escapeHTML(item.evidence_lines)}</span></div>` : ""}
+          </div>`;
+        }).join("") : '<p class="text-sm text-muted">No claim features were identified in the response.</p>';
+
+        const findings = Array.isArray(report.findings) ? report.findings : [];
+        const questions = Array.isArray(report.viva_questions) ? report.viva_questions : [];
+        const evidenceSeen = new Set();
+        const evidence = questions.filter((question) => {
+          if (!question.file || !question.line_range || !question.code_context) return false;
+          const key = `${question.file}:${question.line_range}`;
+          if (evidenceSeen.has(key)) return false;
+          evidenceSeen.add(key);
+          return true;
+        });
+        byId("code-evidence").innerHTML = evidence.length ? evidence.map((question, index) =>
+          `<div class="overflow-hidden rounded-xl border border-mint/15 bg-mint/[.025]">
+            <div class="flex items-center justify-between gap-3 border-b border-white/[.06] px-3.5 py-2.5"><div class="flex min-w-0 items-center gap-2 font-mono text-[11px] text-mint">${icon("file", "h-3.5 w-3.5 shrink-0")}<span class="truncate">${escapeHTML(question.file)}</span><span class="shrink-0 text-slate-400">L${escapeHTML(question.line_range)}</span></div><span class="shrink-0 text-[10px] text-muted">Evidence ${index + 1}</span></div>
+            <pre class="overflow-x-auto p-3 font-mono text-[11px] leading-5 text-slate-300"><code>${escapeHTML(question.code_context)}</code></pre>
+          </div>`
+        ).join("") : "";
+        byId("findings").innerHTML = findings.length ? findings.map((finding) => {
+          const severity = finding.severity === "high" ? "text-rose-300" : finding.severity === "medium" ? "text-amber-200" : "text-slate-300";
+          const snippet = finding.code_snippet ? `<pre class="mt-3 overflow-x-auto rounded-lg border border-white/[.06] bg-ink/75 p-3 font-mono text-[11px] leading-5 text-slate-300"><code>${escapeHTML(finding.code_snippet)}</code></pre>` : "";
+          return `<div class="rounded-xl border border-white/[.07] bg-white/[.025] p-4">
+            <div class="flex flex-wrap items-start justify-between gap-2"><div><div class="font-mono text-[11px] text-brand">${escapeHTML(finding.file)} <span class="text-slate-500">· L${escapeHTML(finding.lines)}</span></div><h4 class="mt-2 text-sm font-semibold text-white">${escapeHTML(finding.title)}</h4></div><span class="text-[10px] font-bold uppercase tracking-[.12em] ${severity}">${escapeHTML(finding.severity)}</span></div>
+            <p class="mt-2 text-xs leading-5 text-slate-400">${escapeHTML(finding.description)}</p>${snippet}
+            <p class="mt-3 text-xs leading-5 text-slate-300"><span class="font-semibold text-muted">Recommendation:</span> ${escapeHTML(finding.recommendation)}</p>
+          </div>`;
+        }).join("") : '<div class="rounded-xl border border-mint/15 bg-mint/[.04] p-4 text-sm text-mint">No discrepancy findings were returned for the inspected evidence.</div>';
+
+        renderQuestions(questions);
+        byId("results").scrollIntoView({ behavior: "smooth", block: "start" });
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      function renderQuestions(questions) {
+        const wrapper = byId("viva-questions");
+        if (!questions.length) {
+          wrapper.innerHTML = '<p class="rounded-xl border border-white/[.07] bg-panel p-4 text-sm text-muted">No viva questions were returned.</p>';
+          return;
+        }
+        wrapper.innerHTML = questions.map((question, index) => {
+          const concepts = Array.isArray(question.expected_concepts) ? question.expected_concepts : [];
+          const conceptsHTML = concepts.map((concept) => `<span class="rounded-full border border-brand/15 bg-brand/[.06] px-2.5 py-1 text-[10px] text-brand">${escapeHTML(concept)}</span>`).join("");
+          const codeContext = question.code_context ? `<pre class="mt-4 overflow-x-auto rounded-lg border border-white/[.06] bg-ink/75 p-3 font-mono text-[11px] leading-5 text-slate-300"><code>${escapeHTML(question.code_context)}</code></pre>` : "";
+          const fixSnippet = question.refactored_fix_snippet ? `<details class="mt-3 rounded-lg border border-white/[.07] bg-ink/40"><summary class="cursor-pointer px-3 py-2.5 text-xs font-medium text-slate-300">Suggested implementation snippet</summary><pre class="overflow-x-auto border-t border-white/[.06] p-3 font-mono text-[11px] leading-5 text-slate-300"><code>${escapeHTML(question.refactored_fix_snippet)}</code></pre></details>` : "";
+          return `<article class="rounded-2xl border border-white/[.09] bg-panel p-5 shadow-card sm:p-6" data-question-index="${index}">
+            <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div class="flex gap-3"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-brand/20 bg-brand/[.08] text-xs font-bold text-brand">0${index + 1}</span><div><div class="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[.12em] text-muted"><span>${escapeHTML(question.difficulty || "Technical")}</span><span>·</span><span class="font-mono normal-case tracking-normal text-brand">${escapeHTML(question.file)}:${escapeHTML(question.line_range)}</span></div><h4 class="mt-2 text-sm font-semibold leading-6 text-white">${escapeHTML(question.question)}</h4></div></div></div>
+            <p class="mt-3 pl-11 text-xs leading-5 text-slate-400">${escapeHTML(question.why_asked)}</p>
+            ${codeContext}
+            <div class="mt-3 flex flex-wrap gap-1.5">${conceptsHTML}</div>
+            ${fixSnippet}
+            <form class="answer-form mt-4" data-question-index="${index}">
+              <label for="answer-${index}" class="mb-2 block text-xs font-semibold text-slate-300">Your answer</label>
+              <textarea id="answer-${index}" name="user_answer" rows="3" maxlength="4000" placeholder="Explain the design, how the code behaves, and relevant trade-offs…" class="w-full resize-y rounded-xl border border-white/10 bg-ink/70 px-3.5 py-3 text-sm leading-6 text-white placeholder:text-slate-600 focus:border-brand/60 focus:outline-none focus:ring-4 focus:ring-brand/10"></textarea>
+              <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span class="text-[10px] text-muted">Answers are sent to this backend for evaluation.</span>
+                <button type="submit" class="grade-button inline-flex items-center justify-center gap-2 rounded-lg border border-brand/20 bg-brand/[.1] px-4 py-2.5 text-xs font-semibold text-brand transition hover:border-brand/40 hover:bg-brand/[.16]">${icon("check", "h-4 w-4")} Submit Answer for Grading</button>
+              </div>
+            </form>
+            <div class="grading-result mt-4" role="status" aria-live="polite" hidden></div>
+          </article>`;
+        }).join("");
+      }
+
+      function beginAudit() {
+        clearBanners();
+        byId("results").hidden = true;
+        byId("loading-panel").hidden = false;
+        byId("loading-panel").scrollIntoView({ behavior: "smooth", block: "center" });
+        setLoading(true);
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        beginAudit();
+        try {
+          const response = await fetch("/api/audit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify(credentialPayload())
+          });
+          const report = await readResponse(response);
+          setLoading(false);
+          byId("loading-panel").hidden = true;
+          renderReport(report);
+        } catch (error) {
+          setLoading(false);
+          byId("loading-panel").hidden = true;
+          setBanner("error", error.message || "The audit could not be completed. Check the repository URL and try again.");
+        }
+      });
+
+      byId("viva-questions").addEventListener("submit", async (event) => {
+        const answerForm = event.target.closest(".answer-form");
+        if (!answerForm) return;
+        event.preventDefault();
+        const index = Number(answerForm.dataset.questionIndex);
+        const question = currentAudit && currentAudit.viva_questions && currentAudit.viva_questions[index];
+        if (!question) {
+          setBanner("error", "This viva question is no longer available. Run the audit again.");
+          return;
+        }
+        const answer = answerForm.elements.user_answer.value;
+        const card = answerForm.closest("article");
+        const resultPanel = card.querySelector(".grading-result");
+        const button = answerForm.querySelector(".grade-button");
+        button.disabled = true;
+        button.textContent = "Evaluating answer…";
+        resultPanel.hidden = true;
+        try {
+          const payload = {
+            question_id: question.id,
+            question: question.question,
+            expected_concepts: Array.isArray(question.expected_concepts) ? question.expected_concepts : [],
+            user_answer: answer,
+            code_context: question.code_context || ""
+          };
+          const provider = byId("llm-provider").value;
+          const gemini = byId("gemini-key").value.trim();
+          const openai = byId("openai-key").value.trim();
+          if (provider !== "openai" && gemini) payload.gemini_api_key = gemini;
+          if (provider !== "gemini" && openai) payload.openai_api_key = openai;
+          payload.llm_provider = provider;
+          const response = await fetch("/api/evaluate-viva", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await readResponse(response);
+          const score = Math.max(0, Math.min(100, Number(result.score) || 0));
+          const toneClass = result.passed ? "border-mint/20 bg-mint/[.05]" : "border-amber-300/20 bg-amber-300/[.05]";
+          const matched = Array.isArray(result.matched_concepts) ? result.matched_concepts : [];
+          const missed = Array.isArray(result.missed_concepts) ? result.missed_concepts : [];
+          resultPanel.innerHTML = `<div class="rounded-xl border p-4 ${toneClass}">
+            <div class="flex flex-wrap items-center justify-between gap-3"><div><div class="text-[10px] font-semibold uppercase tracking-[.14em] text-muted">Answer assessment</div><div class="mt-1 text-sm font-semibold text-white">${escapeHTML(result.verdict || (result.passed ? "Strong technical defense" : "More evidence needed"))}</div></div><div class="text-2xl font-semibold ${result.passed ? "text-mint" : "text-amber-200"}">${score}<span class="text-xs text-muted"> / 100</span></div></div>
+            <p class="mt-3 text-xs leading-5 text-slate-300">${escapeHTML(result.feedback || "Review the expected concepts and strengthen your explanation.")}</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">${matched.map((concept) => `<span class="rounded-full border border-mint/15 bg-mint/[.06] px-2 py-1 text-[10px] text-mint">✓ ${escapeHTML(concept)}</span>`).join("")}${missed.map((concept) => `<span class="rounded-full border border-amber-300/15 bg-amber-300/[.05] px-2 py-1 text-[10px] text-amber-100">Review: ${escapeHTML(concept)}</span>`).join("")}</div>
+            <details class="mt-3 rounded-lg border border-white/[.07] bg-ink/35"><summary class="cursor-pointer px-3 py-2.5 text-xs font-medium text-slate-300">See an ideal answer outline</summary><p class="border-t border-white/[.06] px-3 py-3 text-xs leading-5 text-slate-400">${escapeHTML(result.ideal_answer || "")}</p></details>
+          </div>`;
+          resultPanel.hidden = false;
+          if (window.lucide) window.lucide.createIcons();
+        } catch (error) {
+          resultPanel.innerHTML = `<p class="rounded-xl border border-rose-400/20 bg-rose-400/[.06] p-3 text-xs leading-5 text-rose-100">${escapeHTML(error.message || "Answer evaluation failed. Please retry.")}</p>`;
+          resultPanel.hidden = false;
+        } finally {
+          button.disabled = false;
+          button.innerHTML = `${icon("check", "h-4 w-4")} Submit Answer for Grading`;
+        }
+      });
+
+      byId("settings-toggle").addEventListener("click", () => {
+        const panel = byId("settings-panel");
+        panel.hidden = !panel.hidden;
+        byId("settings-toggle").setAttribute("aria-expanded", String(!panel.hidden));
+      });
+      byId("clear-keys").addEventListener("click", () => {
+        ["github-token", "gemini-key", "openai-key"].forEach((id) => { byId(id).value = ""; });
+        byId("llm-provider").value = "auto";
+        setBanner("notice", "API keys cleared from this page's memory.");
+      });
+      byId("load-sample").addEventListener("click", loadSelectedSample);
+      byId("claim").addEventListener("input", updateClaimCount);
+
+      if (window.lucide) window.lucide.createIcons();
+      updateClaimCount();
+      refreshHealth();
+      loadSamples();
+      window.setInterval(refreshHealth, 20000);
+    })();
+  </script>
+</body>
+</html>

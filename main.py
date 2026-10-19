@@ -16,12 +16,16 @@ from dotenv import load_dotenv
 from fastapi.exceptions import RequestValidationError
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, ValidationError
 
 load_dotenv()
 
 APP_VERSION = "1.0.0"
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(PROJECT_DIR, "static")
+INDEX_FILE = os.path.join(STATIC_DIR, "index.html")
 MAX_CLAIM_LENGTH = 2000
 GITHUB_TIMEOUT_SECONDS = 12
 LLM_TIMEOUT_SECONDS = 30
@@ -1176,6 +1180,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.exception_handler(RequestValidationError)
@@ -1207,7 +1212,6 @@ def auth_configuration() -> dict:
     }
 
 
-@app.get("/")
 @app.get("/api/health")
 def health() -> dict:
     return {
@@ -1217,6 +1221,13 @@ def health() -> dict:
         "docs_url": "/docs",
         "auth_configured": auth_configuration(),
     }
+
+
+@app.get("/")
+def dashboard():
+    if os.path.isfile(INDEX_FILE):
+        return FileResponse(INDEX_FILE, media_type="text/html")
+    return health()
 
 
 @app.get("/api/samples")

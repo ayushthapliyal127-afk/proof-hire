@@ -39,6 +39,16 @@ Build mode: fast
   Learner check: Use one sample question with an empty answer and then a thoughtful answer in `/docs`; compare scores, matched/missed concepts, and feedback.
   Commit: `Complete viva evaluation and verify backend`
 
+- [x] **4. The served dashboard completes the audit and viva flow**
+  Becomes usable: A user opens `/`, checks service status, loads a sample or enters a repository and claim, reads the audit evidence, and submits answers for grading without leaving the page.
+  Why now: The API contract is stable and the learner has approved bringing the previously separate frontend into the same app; serving it from FastAPI keeps setup simple and makes the project immediately demoable.
+  PRD ref: `prd.md > The Core Journey`, `prd.md > What We're Building`, `prd.md > Dashboard, Health and Samples`, `prd.md > Audit Request`, `prd.md > Viva Answer Evaluation`
+  Spec ref: `spec.md > Where It Runs and How Someone Tries It`, `spec.md > Components > Static dashboard`, `spec.md > File Structure`
+  Build: Add the responsive Tailwind/Lucide dashboard at `static/index.html`, render backend status/samples/audit/evaluation data safely, add in-memory key settings and progress/error states, mount `/static`, and serve the page at `/`.
+  Verify (mechanical): Compile/import `main.py`; start Uvicorn; verify `/` returns the HTML shell, `/static/` loads the dashboard, health and samples work, sample audit and viva evaluation return usable JSON, and frontend code references the expected routes with safe text rendering.
+  Learner check: Open the dashboard, load a sample, run an audit, inspect an evidence citation, and submit an answer for grading; learner reported that the page looked amazing and sample loading, audits, and grading worked smoothly.
+  Commit: `Add served ProofHire audit dashboard`
+
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 1, before live GitHub/provider work
@@ -46,18 +56,20 @@ Build mode: fast
 
 ## Final Review
 
-- [x] Final review complete — feedback resolved and learner confirms ready to ship
+- [ ] Final review complete — feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map
 
-- [x] Learning activity complete — evidence-based recap connected to the learner's goal and verified endpoint behavior
-- [x] Optional edit and transfer reflection addressed — not requested; learner asked to proceed without extra questions
-- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [ ] Learning activity complete — evidence-based recap connected to the learner's goal and verified endpoint behavior
+- [ ] Optional edit and transfer reflection addressed — not requested; learner asked to proceed without extra questions
+- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: Final hands-on review at `/docs`: learner tested `GET /api/samples` and `POST /api/audit` and reported clean evidence and viva questions, then confirmed everything looked good. Independent HTTP checks also verified `POST /api/evaluate-viva` returns 200 on ports 8000 and 8001; all endpoint smoke checks passed.
-Route and stops: Reference route only (not toured live): `main.py` `audit` → `repository_key`/`fetch_repository` → `build_heuristic_audit` or `build_llm_audit`; viva answers enter `evaluate_viva`.
-Edit outcome: Not applicable; no final-review changes were requested.
-Reflection: Not requested; learner asked to proceed without additional questions.
-Activity mode: Evidence-based recap after learner's live API review; static code route provided in the app map.
+Activity and evidence: Learner reviewed the served dashboard at port 8001, loaded a sample, ran audits, and submitted a viva answer; reported that all worked smoothly and the dashboard looked amazing. Independent smoke checks verified `/`, `/static/index.html`, `/api/health`, `/api/samples`, `/api/audit`, and `/api/evaluate-viva`.
+Route and stops: Reference route only (not toured live): `main.py` `dashboard` → `static/index.html` audit form submit handler → `/api/audit` → `renderReport`; per-question form submit handler → `/api/evaluate-viva`.
+Edit outcome: Not applicable; no dashboard changes were requested during review.
+Reflection: Pending final wrap-up.
+Activity mode: Prior backend review completed; frontend live check pending.
 
 ## Revisions
+
+- Added the served Tailwind/Lucide frontend and revised the default journey from a backend-only service to a same-origin dashboard after the learner requested frontend creation and integration.

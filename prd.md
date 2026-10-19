@@ -5,28 +5,30 @@ status: approved
 
 # ProofHire — Product Requirements
 
-ProofHire is a FastAPI REST backend for auditing one technical resume claim against a bounded set of files in a GitHub repository. A decoupled frontend will be built separately.
+ProofHire is a FastAPI app with a static dark-mode dashboard for auditing one technical resume claim against a bounded set of files in a GitHub repository.
 
 ## The Core Journey
 
-1. A frontend calls `GET /api/health` to check that the service is available, then `GET /api/samples` to show repeatable examples.
-2. The user enters a GitHub repository URL and a technical claim, or chooses a sample payload. The frontend sends one `POST /api/audit` request.
+1. The user opens `/`; the dashboard polls `GET /api/health` and loads demo cases from `GET /api/samples`.
+2. The user enters a GitHub repository URL and a technical claim, or selects and loads a sample. The dashboard sends one `POST /api/audit` request.
 3. The backend validates the URL and request, uses a known offline snapshot or retrieves repository metadata, README, manifests, and up to six high-priority source files, then numbers each source line.
 4. The backend analyzes the claim. It uses Gemini or OpenAI when configured; if no key is available or the provider fails, deterministic code and dependency inspection completes the audit.
-5. The frontend receives structured repository metadata, score/verdict, evidence-linked claim breakdown, findings, warnings and exactly three grounded viva questions.
-6. The user can submit an answer to one question through `POST /api/evaluate-viva` and receive a score, concept feedback, and an ideal answer. This also works without an LLM key.
+5. The dashboard renders repository metadata, score/verdict, evidence-linked claim breakdown, findings, warnings and exactly three grounded viva questions.
+6. The user can submit an answer from a question card through `POST /api/evaluate-viva` and receive a score, concept feedback, and an ideal answer. This also works without an LLM key.
 
 ## What We're Building
 
-- A single-file Python FastAPI service with a root service response, health endpoint, three repeatable offline sample cases, repository URL validation, resilient GitHub retrieval and caching, optional Gemini/OpenAI analysis with heuristic fallback, structured audit responses, and viva answer evaluation.
-- A REST contract suitable for an independently deployed React/Lovable or other frontend. The backend returns JSON only; no browser UI is part of this phase.
+- A single-file Python FastAPI service with a dashboard served at `/`, a health endpoint at `/api/health`, three repeatable offline sample cases, repository URL validation, resilient GitHub retrieval and caching, optional Gemini/OpenAI analysis with heuristic fallback, structured audit responses, and viva answer evaluation.
+- A responsive dark-mode dashboard in `static/index.html` using Tailwind CSS and Lucide icons. It consumes the same-origin REST API and displays audit evidence and viva grading results without page reloads.
+- A frontend path that works without credentials on the bundled sample flow.
 - Explicit warnings for bounded scans, unavailable data, provider fallback, and unverified coverage. A missing indicator means only that support was not found in inspected files.
 
 ## API Behavior and Acceptance Criteria
 
-### Health and Samples
+### Dashboard, Health and Samples
 
-- `GET /` and `GET /api/health` return service status, version, docs path, and booleans indicating whether GitHub and any LLM key are configured.
+- `GET /` serves the dashboard; `GET /api/health` returns service status, version, docs path, and booleans indicating whether GitHub and any LLM key are configured.
+- The dashboard polls health to show backend availability and fetches sample options during page initialization.
 - `GET /api/samples` returns three labeled request payloads and bundled snapshots that the audit endpoint recognizes offline: an exaggerated FastAPI/Redis/JWT claim, an Express scalability claim, and a Python ML/testing/Docker claim.
 - CORS allows all origins, methods, and headers and enables credentials, as requested for independent frontend development. Browser clients should not send cookie credentials with wildcard origins.
 
@@ -42,6 +44,7 @@ Acceptance:
 - Public repository 404/private responses are clear structured errors. GitHub rate limits and network failures produce structured warnings/fallback behavior, not an unhandled 500.
 - Ignore binary, lock, minified, generated, and dependency-vendor files; cap file count and bytes; disclose truncation and scan limitations.
 - A provider error or invalid/malformed provider response falls back to the deterministic analyzer.
+- The dashboard displays loading progress, structured errors, findings and scan limits without reloading the page.
 
 ### Viva Answer Evaluation
 
@@ -64,18 +67,20 @@ Acceptance:
 - **Partial scan:** output lists scanned files and limits; it never equates absence in the scan with absence in the full repository.
 - **Fetch error:** return a structured 4xx/503 error or a sample fallback, never an unhandled server exception.
 - **Persistence:** no database or audit history; the cache is process-local and expires.
+- **Dashboard:** `/` serves the static page, `/static/` serves local assets, and optional browser keys are held only in page memory.
 
 ## Non-Goals
 
-- Frontend implementation, user accounts, persistent report storage, private repositories, or broad repository indexing.
+- User accounts, persistent report storage, private repositories, or broad repository indexing.
 - Verifying a candidate's identity, authorship, truthfulness, or hiring suitability.
 - Guaranteeing exhaustive source analysis or treating an AI-generated score as an employment decision.
 - Claiming production readiness for internet deployment without deployment-specific secret management, quotas, observability, and security review.
 
 ## Approved Decisions
 
-- The first implementation is backend-only: Python, FastAPI, and a REST API that supports a separate frontend.
+- The first implementation is Python FastAPI with a static same-origin dashboard and REST API.
 - The service supports optional GitHub, Gemini, and OpenAI credentials via environment, request headers, or request body, and remains useful without keys.
 - The app includes three deterministic offline sample snapshots, in-memory TTL repository caching, bounded GitHub retrieval, line-numbered evidence, deterministic fallback analysis, and optional live LLM analysis.
 - The required endpoints are `GET /`, `GET /api/health`, `GET /api/samples`, `POST /api/audit`, and `POST /api/evaluate-viva`.
 - The code is a human-review aid, not an automated hiring decision.
+- A separate frontend deployment remains possible, but the default demo serves its dashboard from FastAPI.

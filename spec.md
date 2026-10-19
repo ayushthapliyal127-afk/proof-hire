@@ -7,15 +7,15 @@ status: approved
 
 ## How This Works, In Plain Language
 
-A separate frontend sends JSON to the FastAPI backend. The backend validates the GitHub URL, retrieves a small set of public repository files (or uses one of three bundled demo snapshots), adds exact line numbers, and analyzes the resume claim. With an API key it can ask Gemini or OpenAI for a structured analysis; otherwise, or if an LLM call fails, a deterministic code/manifest inspector produces the result. The backend checks citations against fetched files before returning them. Nothing is saved to a database.
+FastAPI serves the static dashboard at `/` and the JSON API from the same process. The dashboard polls health, loads one of three bundled sample payloads, and sends the repository URL and claim to the backend. The backend validates the URL, retrieves a small set of public repository files (or uses a bundled snapshot), adds exact line numbers, and analyzes the resume claim. With an API key it can ask Gemini or OpenAI for a structured analysis; otherwise, or if an LLM call fails, a deterministic code/manifest inspector produces the result. The backend checks citations against fetched files before returning them. Nothing is saved to a database.
 
 ## The Core Journey Through the System
 
-1. Frontend checks `GET /api/health` and loads samples from `GET /api/samples`. Implements `prd.md > Health and Samples`.
-2. Frontend submits a repository URL, claim, and optional credential/provider overrides to `POST /api/audit`. FastAPI validates input, resolves secrets by request body → header → environment priority, and rejects non-GitHub URLs. Implements `prd.md > Audit Request`.
+1. Browser opens `/`; FastAPI serves the dashboard, which checks `GET /api/health` and loads samples from `GET /api/samples`. Implements `prd.md > The Core Journey`, `prd.md > Health and Samples`.
+2. Dashboard submits a repository URL, claim, and optional credential/provider overrides to `POST /api/audit`. FastAPI validates input, resolves secrets by request body → header → environment priority, and rejects non-GitHub URLs. Implements `prd.md > Audit Request`.
 3. Repository service checks the sample snapshot map and TTL cache, then uses GitHub REST metadata and recursive tree APIs for live public repositories. It selects README and recognized manifests plus up to six prioritized source files, rejects binary/vendor/minified/lock content, bounds bytes, and numbers lines. Implements `prd.md > Audit Request`.
 4. The analysis service calls the selected LLM through REST with strict JSON instructions, or runs deterministic feature/import/dependency inspection. An LLM error or invalid response switches to the heuristic result. All returned citations are checked against actual fetched files and line ranges. Implements `prd.md > Audit Request`.
-5. `POST /api/audit` returns metadata, score/verdict, claim breakdown, findings, warnings, and three viva questions. `POST /api/evaluate-viva` evaluates a defense via LLM when usable or via concept/depth scoring. Implements `prd.md > Viva Answer Evaluation`.
+5. Dashboard renders metadata, score/verdict, claim breakdown, findings, warnings, and three viva questions. The user can post an answer to `POST /api/evaluate-viva`, which evaluates via LLM when usable or via concept/depth scoring. Implements `prd.md > Viva Answer Evaluation`.
 
 ## Stack
 
@@ -23,17 +23,22 @@ A separate frontend sends JSON to the FastAPI backend. The backend validates the
 - FastAPI for REST routing, Pydantic for validation/response schemas, and Uvicorn for local serving.
 - `requests` for GitHub and LLM REST calls; `python-dotenv` for optional local `.env` configuration.
 - The dependency set is pure Python / wheel-distributable on Windows and does not require a C++ compiler.
+- Frontend is one static HTML document with Tailwind CSS and Lucide icons loaded from CDN; vanilla JavaScript calls same-origin API routes and handles results and errors.
 - No database, frontend framework, or persistent cache.
 
 ## Where It Runs and How Someone Tries It
 
-From the project root, install with `python -m pip install -r requirements.txt`, copy `.env.example` to `.env` if optional credentials are needed, and run `python -m uvicorn main:app --reload`. Open `http://127.0.0.1:8000/docs` or call the JSON endpoints from a separate frontend. Without credentials, use a sample URL from `GET /api/samples` and submit its paired claim to `POST /api/audit`. The embedded snapshot path does not require internet access.
+From the project root, install with `python -m pip install -r requirements.txt`, copy `.env.example` to `.env` if optional credentials are needed, and run `python -m uvicorn main:app --reload`. Open `http://127.0.0.1:8000/` for the dashboard or `/docs` for the API explorer. Without credentials, use **Load Sample Repo** and run the audit; the embedded snapshot path does not require GitHub access.
 
 ## Components
 
 ### FastAPI application
 
 One `main.py` defines Pydantic request/response schemas, CORS middleware, root/health/sample/audit/evaluation endpoints, and JSON error handling. CORS uses all origins, methods, headers, and credentials as requested. No browser cookie session is used.
+
+### Static dashboard
+
+`static/index.html` contains the responsive dashboard, accessible forms, status polling, sample selector, loading/alert states, score and evidence rendering, viva answer submission, and optional in-memory API-key settings. User-provided and API-returned text is escaped before insertion in the page. Credentials are not stored in localStorage or sent to analytics.
 
 ### GitHub URL and repository reader
 
@@ -57,7 +62,7 @@ The evaluator may use a configured LLM, but validates its output and falls back 
 
 ### Health responses
 
-`GET /` and `GET /api/health` return:
+`GET /` serves `static/index.html`. `GET /api/health` returns:
 
 ```json
 {
@@ -93,6 +98,8 @@ proof-hire/
 ├── requirements.txt        # FastAPI, Uvicorn, Requests, Pydantic, python-dotenv
 ├── .env.example            # Secret-free optional credential names
 ├── .gitignore              # Local secrets, Python artifacts, private learner profile
+├── static/
+│   └── index.html
 ├── scope.md
 ├── prd.md
 ├── spec.md
@@ -107,6 +114,7 @@ proof-hire/
 
 - GitHub REST API metadata and recursive tree calls use bounded timeouts, optional `GITHUB_TOKEN`, and an in-memory cache. Raw public file reads use `raw.githubusercontent.com`.
 - Gemini REST and OpenAI Chat Completions are optional; `GEMINI_API_KEY` and `OPENAI_API_KEY` are never required to run samples or heuristic analysis.
+- Tailwind CSS and Lucide browser assets are loaded from a public CDN; styling/icons require internet access, while API sample behavior is served locally.
 - External calls are bounded by timeouts and checked status codes. Secrets are accepted from environment, headers, or JSON fields with request values taking priority; do not persist them.
 
 ## Failure Modes and Safety Boundaries
@@ -118,6 +126,7 @@ proof-hire/
 - LLM malformed JSON or unsupported citations: discard the LLM result and fall back to deterministic analysis.
 - Missing feature: report only that it was not found in the inspected files.
 - CORS `*` plus credentials is retained per request; browser frontends should not use cookie credentials for this API.
+- The dashboard requires CDN access for Tailwind/Lucide; native forms and API behavior remain understandable if those assets fail to load.
 
 ## Decisions
 
@@ -125,3 +134,4 @@ proof-hire/
 - Approved: optional GitHub/Gemini/OpenAI credentials via environment, headers, or body, with unauthenticated operation supported.
 - Approved: process-local TTL cache, three embedded offline sample snapshots, deterministic fallback, optional Gemini/OpenAI REST analysis, and five specified endpoints.
 - Approved: public GitHub repositories only; bounded file selection; line-grounded findings; no database and no hiring recommendation.
+- Approved: serve a dark Tailwind/Lucide dashboard from `/` and static assets from `/static`, with same-origin API calls and browser-session-only key settings.
