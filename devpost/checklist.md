@@ -56,19 +56,19 @@ Build mode: fast
 
 ## Final Review
 
-- [ ] Final review complete — feedback resolved and learner confirms ready to ship
+- [x] Final review complete — feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — evidence-based recap connected to the learner's goal and verified endpoint behavior
-- [ ] Optional edit and transfer reflection addressed — not requested; learner asked to proceed without extra questions
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete — evidence-based recap connected to the learner's goal and verified endpoint behavior
+- [x] Optional edit and transfer reflection addressed — no edit or transfer reflection requested
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: Learner reviewed the served dashboard at port 8001, loaded a sample, ran audits, and submitted a viva answer; reported that all worked smoothly and the dashboard looked amazing. Independent smoke checks verified `/`, `/static/index.html`, `/api/health`, `/api/samples`, `/api/audit`, and `/api/evaluate-viva`.
-Route and stops: Reference route only (not toured live): `main.py` `dashboard` → `static/index.html` audit form submit handler → `/api/audit` → `renderReport`; per-question form submit handler → `/api/evaluate-viva`.
+Activity and evidence: Learner reviewed the served dashboard at port 8001, loaded a sample, ran audits, and submitted a viva answer; reported that all worked smoothly and the dashboard looked amazing. Independent smoke checks verified `/`, `/static/index.html`, `/api/health`, `/api/samples`, `/api/audit`, and `/api/evaluate-viva`. Connected the observed claim-to-evidence flow to the learner's goal of understanding how AI compares claims with code.
+Route and stops: Reference route shown in `devpost/app-map.html` (not toured live): `main.py` `dashboard` → `static/index.html` audit form submit handler → `/api/audit` → `renderReport`; per-question form submit handler → `/api/evaluate-viva`.
 Edit outcome: Not applicable; no dashboard changes were requested during review.
-Reflection: Pending final wrap-up.
-Activity mode: Prior backend review completed; frontend live check pending.
+Reflection: Optional transfer reflection not requested.
+Activity mode: Evidence-based recap after learner's live dashboard review; static reference route available in the app map.
 
 ## Revisions
 
