@@ -5,5 +5,11 @@
 venv/
 __pycache__/
 *.py[cod]
+*.pyc
 .pytest_cache/
+.agents/
+.claude/
+agent/
+skills-lock.json
+*.before-*
 /devpost/learner-profile.md

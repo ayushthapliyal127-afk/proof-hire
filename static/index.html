@@ -104,6 +104,13 @@
           </label>
           <button id="clear-keys" type="button" class="mb-px rounded-lg border border-white/10 px-3 py-2.5 text-xs text-muted transition hover:border-rose-400/30 hover:text-rose-200">Clear</button>
         </div>
+        <label class="block text-xs font-medium text-slate-300">Failure policy
+          <select id="fallback-policy" class="mt-2 w-full rounded-lg border border-white/10 bg-ink/80 px-3 py-2.5 text-sm text-white focus:border-brand/60 focus:outline-none">
+            <option value="allow_heuristic">Allow clearly labeled heuristic fallback</option>
+            <option value="llm_cascade">Try configured LLMs only</option>
+            <option value="llm_required">Require the selected LLM only</option>
+          </select>
+        </label>
         <p class="text-[11px] leading-relaxed text-muted sm:col-span-2 lg:col-span-4">Keys stay in this page's memory and are sent only to this ProofHire backend for the request. They are not saved in browser storage. Use a trusted local backend.</p>
       </div>
     </div>
@@ -149,11 +156,17 @@
                 <i data-lucide="zap" class="h-4 w-4"></i> Load Sample Repo
               </button>
             </div>
-            <button id="audit-button" type="submit" class="group inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-brand to-indigo-500 px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:brightness-110 disabled:cursor-wait">
-              <i data-lucide="scan-line" class="h-[18px] w-[18px]"></i>
-              <span>Audit Repository &amp; Verify Claims</span>
-              <i data-lucide="arrow-up-right" class="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5"></i>
-            </button>
+            <div class="flex flex-col gap-3 sm:items-end">
+              <label class="flex items-center gap-2 text-[11px] text-muted">
+                <input id="refresh-repository" type="checkbox" class="rounded border-white/20 bg-ink text-brand focus:ring-brand/40">
+                Refresh repository snapshot (bypass cache)
+              </label>
+              <button id="audit-button" type="submit" class="group inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-brand to-indigo-500 px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:brightness-110 disabled:cursor-wait">
+                <i data-lucide="scan-line" class="h-[18px] w-[18px]"></i>
+                <span>Audit Repository &amp; Verify Claims</span>
+                <i data-lucide="arrow-up-right" class="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5"></i>
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -384,7 +397,9 @@
         const body = {
           repo_url: byId("repo-url").value.trim(),
           claim: byId("claim").value.trim(),
-          llm_provider: byId("llm-provider").value
+          llm_provider: byId("llm-provider").value,
+          fallback_policy: byId("fallback-policy").value,
+          refresh_repository: byId("refresh-repository").checked
         };
         const github = byId("github-token").value.trim();
         const gemini = byId("gemini-key").value.trim();
@@ -431,7 +446,9 @@
           `<span class="rounded-full border border-white/10 bg-white/[.035] px-3 py-1.5 text-slate-300">${escapeHTML(metadata.owner || "")}/${escapeHTML(metadata.repo || "")}</span>`,
           `<span class="rounded-full border border-white/10 bg-white/[.035] px-3 py-1.5 text-slate-300">${escapeHTML(metadata.stars ?? 0)} stars</span>`,
           `<span class="rounded-full border border-white/10 bg-white/[.035] px-3 py-1.5 text-slate-300">Engine: ${escapeHTML(metadata.analysis_engine || "heuristic")}</span>`,
-          metadata.cached ? '<span class="rounded-full border border-brand/20 bg-brand/[.07] px-3 py-1.5 text-brand">Cached</span>' : ""
+          report.result_status && `<span class="rounded-full border border-white/10 bg-white/[.035] px-3 py-1.5 text-slate-300">Result: ${escapeHTML(report.result_status)}</span>`,
+          report.provider_attribution && `<span class="rounded-full border border-white/10 bg-white/[.035] px-3 py-1.5 text-slate-300">LLM: ${escapeHTML(report.provider_attribution.actual_provider || "none")}${report.provider_attribution.actual_model ? ` · ${escapeHTML(report.provider_attribution.actual_model)}` : ""}</span>`,
+          metadata.cached ? '<span class="rounded-full border border-brand/20 bg-brand/[.07] px-3 py-1.5 text-brand">Repository snapshot cached</span>' : ""
         ].filter(Boolean).join("");
 
         const limits = Array.isArray(report.scan_limits) ? report.scan_limits : [];
@@ -443,7 +460,7 @@
           `<p class="flex gap-2 text-xs leading-5 text-amber-100/80">${icon("alert", "mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300")}<span>${escapeHTML(warning)}</span></p>`
         ).join("");
         const breakdown = Array.isArray(report.claim_breakdown) ? report.claim_breakdown : [];
-        const verified = breakdown.filter((item) => item.status === "verified").length;
+        const verified = breakdown.filter((item) => item.verification_verdict === "SUPPORTED").length;
         byId("scan-stats").innerHTML = [
           ["Claim signals", breakdown.length],
           ["Verified", verified],
@@ -585,6 +602,7 @@
           if (provider !== "openai" && gemini) payload.gemini_api_key = gemini;
           if (provider !== "gemini" && openai) payload.openai_api_key = openai;
           payload.llm_provider = provider;
+          payload.fallback_policy = byId("fallback-policy").value;
           const response = await fetch("/api/evaluate-viva", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Accept": "application/json" },

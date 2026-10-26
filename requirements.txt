@@ -1,3 +1,4 @@
+# Optional runtime configuration (not Python packages) is documented in .env.example.
 fastapi
 uvicorn
 requests

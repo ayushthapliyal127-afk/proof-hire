@@ -75,7 +75,7 @@
           <path class="edge" marker-end="url(#arrow)" d="M612 191 C640 182 649 162 663 145"></path>
         </svg>
       </div>
-      <p>The deterministic path works without keys. Optional Gemini/OpenAI analysis is accepted only when its citations match fetched files and line ranges; otherwise the backend falls back to deterministic results.</p>
+      <p>The deterministic path works without keys when the request explicitly selects <code>allow_heuristic</code>. Optional Gemini/OpenAI analysis is accepted only when its citations match fetched files and line ranges; provider failures return a structured error unless that heuristic policy is selected.</p>
     </section>
 
     <section aria-labelledby="route-title">
@@ -108,7 +108,7 @@
       <h2 id="run-title">Run it again</h2>
       <pre><code>python -m pip install -r requirements.txt
 python -m uvicorn main:app --reload</code></pre>
-      <p>Open <code>http://127.0.0.1:8000/</code> for the dashboard or <code>/docs</code> for the API explorer. Tailwind and Lucide assets load from public CDNs. No key is required for sample audits. Copy <code>.env.example</code> to local <code>.env</code> only for optional provider testing; never commit secrets.</p>
+      <p>Open <code>http://127.0.0.1:8000/</code> for the dashboard or <code>/docs</code> for the API explorer. Tailwind and Lucide assets load from public CDNs. Sample audits need no API key when <code>Allow clearly labeled heuristic fallback</code> is selected. Copy <code>.env.example</code> to local <code>.env</code> only for optional provider testing; never commit secrets.</p>
       <p class="muted">Map source snapshot: dashboard implementation commit <code>19c331a</code>. This guide is a static snapshot and can drift if the implementation changes. Reopen it at <code>devpost/app-map.html</code>.</p>
     </section>
   </main>
