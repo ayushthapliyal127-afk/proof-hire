@@ -4,7 +4,7 @@
 
 ## Demo Video
 
-**Submission video:** _Add the public demo-video link here before submitting._
+**Submission video:** https://youtu.be/53R72eC6Xgo?si=aD0Abp4Y6XBAyBM8
 
 ProofHire cross-examines a technical resume claim against a bounded set of source files from a public GitHub repository. It returns evidence with exact 1-based line citations, clearly states what its scan cannot establish, and can generate and grade an interactive Technical Viva.
 
